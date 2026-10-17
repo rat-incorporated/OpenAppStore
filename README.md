@@ -1,4 +1,4 @@
-# appstore2 — a custom, self-hosted Android app store
+# OpenAppStore — a custom, self-hosted Android app store
 
 Two pieces, one shared data format:
 
