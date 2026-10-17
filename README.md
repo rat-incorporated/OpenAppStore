@@ -130,7 +130,7 @@ flutter config --jdk-dir "$env:USERPROFILE\android-portable\jdk-17"
 ## Project layout
 
 ```
-appstore2/
+openappstore/
 ├─ custom_app_store/            OpenAppStore (Flutter, Android)
 │  ├─ lib/
 │  │  ├─ models/                Source, StoreApp, AppRelease
