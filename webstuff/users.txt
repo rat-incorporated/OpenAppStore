@@ -1,0 +1,179 @@
+OpenAppStore
+============
+
+An app store you control.
+
+OpenAppStore is an Android app that reads app catalogs published as plain JSON
+files. It is built the way F-Droid is built: there is no central company, no
+account, and no advertising. The app ships with an empty list of sources. You
+decide which catalogs it reads, and you can remove any of them at any time.
+
+That one design decision - empty by default - is the whole point. Nothing is
+recommended to you. Nothing is measured. Nothing is installed unless you press
+Install.
+
+
+What it does
+------------
+
+  - Reads one or more repositories. A repository is a JSON file that lists
+    apps and the APK files that can be downloaded for them.
+  - Shows every app from every enabled repository in one searchable,
+    category-filtered list.
+  - Downloads APKs and hands them to Android's own package installer.
+  - Keeps a list of the apps you have installed, so you can see when a newer
+    version is available.
+  - Verifies a download against a SHA-256 checksum when the repository
+    provides one.
+
+
+What it does not do
+-------------------
+
+  - It does not include any repositories out of the box.
+  - It does not talk to a server of ours, because there is no server of ours.
+  - It does not collect analytics, crash reports, identifiers, or usage data.
+  - It does not sell, rank, or promote anything.
+
+
+Where to get it
+---------------
+
+Download the APK, or build it yourself from source. Android will ask you to
+allow installing apps from this source the first time; that prompt comes from
+Android, not from OpenAppStore, and it applies to every app installed outside
+of a store.
+
+Pick the build that matches your device:
+
+  app-arm64-v8a-release.apk     most modern phones      (about 18 MB)
+  app-armeabi-v7a-release.apk   older 32-bit phones    (about 16 MB)
+  app-x86_64-release.apk        emulators and tablets  (about 20 MB)
+
+If you are not sure, take app-arm64-v8a-release.apk. Virtually every phone made
+in the last several years uses arm64.
+
+
+Using it
+--------
+
+1. Install and open the app.
+2. Tap Sources, then Add repository.
+3. Paste a repository address. Examples:
+
+       https://example.com/repo.json
+       example.com
+       http://192.168.1.20:8000
+
+   If you give just a host name, the app assumes the index lives at
+   /repo.json on that host.
+4. Tap Store. The apps from that repository appear. Pull down to refresh.
+5. Tap any app to read more, then tap Install.
+
+
+Repository addresses look like web addresses, but they point at a JSON file,
+not a web page. If the address does not load, you get an error message with the
+reason - a wrong host, a timeout, a 404, or a file that is not valid JSON.
+
+You can add several repositories. Each one is a separate entry you can switch
+off temporarily without deleting it, using the toggle on the Sources screen. A
+repository that fails to load shows its error in place, and the others keep
+working.
+
+
+Installing and updating
+-----------------------
+
+When you tap Install:
+
+  - The APK is downloaded to the app's private cache.
+  - If the repository lists a SHA-256 for that release, the file is checked
+    against it. A mismatch deletes the download and tells you, rather than
+    handing a bad file to the installer.
+  - Android's package installer opens and asks you to confirm.
+
+Because of how Android works, OpenAppStore cannot install an app silently or
+update it on its own. You always get to see and confirm the install. App stores
+that do update silently are using privileged access that a normal app like this
+one does not have.
+
+Updating works the same way. The Installed screen shows what you have installed
+and marks anything with a newer version available.
+
+
+Permissions
+-----------
+
+OpenAppStore requests exactly two Android permissions:
+
+  INTERNET
+      To download repository indexes and APK files. Obviously required.
+
+  REQUEST_INSTALL_PACKAGES
+      To open Android's installer for a file you asked to install.
+
+There are no others. Not storage, not location, not contacts, not phone state,
+not background access.
+
+The app allows plain HTTP connections in addition to HTTPS, so that a
+repository on your own local network works without a certificate. If you only
+use HTTPS repositories, this changes nothing for you.
+
+
+Privacy
+-------
+
+There is nothing to opt out of, because nothing is collected.
+
+The app stores two things on your device, and nowhere else:
+
+  - the list of repositories you added
+  - the package names and version codes of apps you installed through it
+
+Both live in the app's normal private storage. Uninstalling the app removes
+them. The About screen has a single button that clears both.
+
+
+Frequently asked questions
+--------------------------
+
+Is this a replacement for the Play Store?
+    No. It is a replacement for the part of your phone that decides which app
+    stores you are allowed to use. Install it alongside anything else.
+
+Who runs the repositories?
+    Whoever wants to. A repository is a handful of files on a web server. You
+    can host one yourself in about ten minutes; see the self-hosting guide.
+
+Why is there nothing in the store when I open it?
+    Because shipping a default catalog would mean us deciding what you see.
+    Add a repository and the store fills up.
+
+How do I know a repository is trustworthy?
+    The same way you decide whether to trust any app. A repository is just a
+    signed APK and a checksum, from a specific author. Start with one whose
+    source code you can read.
+
+Can I install an older version?
+    Yes, if the repository still lists it. Open the app page; every release
+    that is published is listed under Versions.
+
+Can I remove an app I installed through OpenAppStore?
+    Yes. Uninstall it the normal Android way. OpenAppStore will keep showing it
+    on the Installed screen until you swipe it away there; that only forgets
+    the record, it does not remove anything from your device.
+
+The APK would not install. What now?
+    Read Android's error. The usual causes are: the APK targets a newer
+    Android than your device runs; it is signed with a different key than the
+    copy already installed; or your device blocks installs from this source.
+    Repositories can list a minimum Android version for each release to make
+    the first case visible before you download.
+
+
+License and source
+------------------
+
+OpenAppStore is free software. The full source, the repository format
+documentation, and the desktop publishing tool are all in the same project.
+Read the code, build your own copy, change it, share it.

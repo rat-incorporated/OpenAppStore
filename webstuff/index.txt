@@ -1,0 +1,210 @@
+OpenAppStore
+============
+
+An app store with no store.
+
+You choose the catalogs. You see the code. Nothing is recommended to you,
+because nothing knows anything about you.
+
+
+-------------------------------------------------------------------------------
+An app store you control
+-------------------------------------------------------------------------------
+
+OpenAppStore is an Android app that reads app catalogs published as plain JSON
+files. It ships with an empty list of sources. You decide which catalogs it
+reads, and you can remove any of them at any time.
+
+There is no central company here, no account to create, and no advertising. A
+catalog is a file on a web server - someone's file, served to you. If you trust
+that someone, you add their catalog. If you change your mind, you delete it and
+it is gone.
+
+That one decision - empty by default - is the whole design. Nothing is
+promoted. Nothing is measured. Nothing is installed unless you press Install.
+
+
+-------------------------------------------------------------------------------
+How it works
+-------------------------------------------------------------------------------
+
+1. Add a repository.
+   A repository is a JSON file listing apps and the APK files available for
+   them. Paste its address. That is it - no account, no signup.
+
+2. Browse everything.
+   Every app from every repository you added, in one searchable, filterable
+   list. See the developer, the version, the size, and which repository it
+   came from.
+
+3. Install.
+   OpenAppStore downloads the APK, checks it against the publisher's SHA-256
+   if one is published, and hands it to Android's own installer. Android asks
+   you to confirm. You always get to see what is happening.
+
+
+-------------------------------------------------------------------------------
+Download
+-------------------------------------------------------------------------------
+
+OpenAppStore is free, and you can build it yourself. Pick the build that
+matches your device:
+
+    app-arm64-v8a-release.apk      most modern phones      about 18 MB
+    app-armeabi-v7a-release.apk    older 32-bit phones    about 16 MB
+    app-x86_64-release.apk         emulators, tablets     about 20 MB
+
+Not sure? Take app-arm64-v8a-release.apk. Virtually every phone sold in recent
+years is arm64.
+
+Android will ask you to allow installing apps from this source the first time
+you install an APK outside of a store. That prompt comes from Android and
+applies to every sideloaded app, not just this one.
+
+
+-------------------------------------------------------------------------------
+What it does
+-------------------------------------------------------------------------------
+
+Reads multiple repositories at once
+    Add as many catalogs as you like. Each one loads, fails, and refreshes
+    independently, so a repository that is down never hides the others.
+
+Searches across everything
+    One search box over names, package IDs, developers, tags, and categories.
+    Filter by category with a tap.
+
+Shows you what you need to decide
+    Icon, description, screenshots, links to source and issue tracker, and the
+    full list of published versions - not just the newest one.
+
+Installs, or explains why it could not
+    Downloads to a private cache, verifies the checksum when one is given, and
+    passes the file to Android's installer. Errors say what actually failed.
+
+Tracks your own updates
+    Records what you installed through it and tells you when the repository
+    has a newer version. It never updates anything behind your back.
+
+
+-------------------------------------------------------------------------------
+What it deliberately does not do
+-------------------------------------------------------------------------------
+
+  - It does not include any repositories out of the box.
+  - It does not contact a server of ours, because there is no server of ours.
+  - It does not collect analytics, identifiers, or crash reports.
+  - It does not have an algorithm that decides what you should see.
+  - It does not install or update silently. Android would not allow it, and
+    neither would we.
+
+
+-------------------------------------------------------------------------------
+Your permissions and your data
+-------------------------------------------------------------------------------
+
+OpenAppStore asks for exactly two Android permissions:
+
+    INTERNET                 to download repository indexes and APK files
+    REQUEST_INSTALL_PACKAGES to open Android's installer for a file you chose
+
+There are no others. Not storage, not location, not contacts, not phone state,
+not background access.
+
+The only things it stores are the repositories you added and the package names
+of apps you installed through it. Both stay on your device. Uninstalling
+removes them, and a single button in the About screen clears them early.
+
+
+-------------------------------------------------------------------------------
+Choose your path
+-------------------------------------------------------------------------------
+
+Using it
+    Install the APK, add a repository, browse. Start here if you just want
+    apps on your phone without an account.
+
+Publishing an app
+    You need a signed APK and an entry in a repository's JSON index. No
+    account, no review queue, no SDK. If you can upload a file and edit text,
+    you can publish.
+
+Running a repository
+    A repository is a folder of static files. Any web server will host one, and
+    you can have it online in an afternoon. You own it; nobody can remove your
+    app from a catalog they do not control.
+
+
+-------------------------------------------------------------------------------
+The format, in one breath
+-------------------------------------------------------------------------------
+
+One JSON document lists your apps; each app lists its releases; each release
+names a version and a URL to an APK. That is the entire protocol.
+
+    {
+      "formatVersion": 1,
+      "name": "My Repo",
+      "apps": [
+        {
+          "id": "com.example.myapp",
+          "name": "My App",
+          "summary": "Does one thing well",
+          "releases": [
+            {
+              "versionName": "1.0.0",
+              "versionCode": 1,
+              "url": "https://example.com/myapp-1.0.0.apk"
+            }
+          ]
+        }
+      ]
+    }
+
+Because it is only JSON, a repository can be a static HTML host, an object
+storage bucket, or a folder on a laptop during development. It can be a
+megabyte or a mistake; either way, it is yours.
+
+
+-------------------------------------------------------------------------------
+Questions people ask
+-------------------------------------------------------------------------------
+
+Is this a replacement for the Play Store?
+    No. It is an alternative path for apps that do not need to go through one.
+    Install it alongside anything else.
+
+Why is it empty when I open it?
+    Because shipping a default catalog would mean us deciding what you see.
+    Add a repository and it fills up.
+
+How do I know a repository is safe?
+    The same way you judge any software: by who published it. A repository is a
+    checksum and a signed APK from a specific author. Start with one whose
+    source you can read.
+
+Can I still install things the normal way?
+    Yes. This installs through Android's own installer like any sideloaded
+    app. Nothing about your device is taken over.
+
+What happens if a repository disappears?
+    Apps you already installed keep working. The catalog entry stops loading,
+    and you can remove it from your list.
+
+Is it really free?
+    Yes, and the source is right there. Read it, build it, change it, share it.
+
+
+-------------------------------------------------------------------------------
+Read the source
+-------------------------------------------------------------------------------
+
+OpenAppStore, the desktop tool that builds repository indexes, and the format
+documentation all live in one project. The whole thing is small enough to read
+in a sitting, which is the point: a store you can audit is a store you can
+trust.
+
+    The Android app      the app itself
+    The desktop tool     a GUI for writing repository indexes
+    The format           the JSON schema, documented field by field
+    An example catalog   a working repository you can host today

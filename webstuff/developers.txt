@@ -1,0 +1,219 @@
+Publishing your app
+===================
+
+This guide is for app developers. To appear in an OpenAppStore repository you
+do not need an account, a review process, or a special SDK. You need two
+things:
+
+  1. A signed APK.
+  2. An entry in a repository's JSON index that points at it.
+
+That is the entire contract. If you can upload a file and edit some text, you
+can publish an Android app to a repository.
+
+
+The five-minute version
+-----------------------
+
+  1. Build a signed release APK.
+  2. Copy it somewhere it can be downloaded over HTTP(S) and note the URL.
+  3. Add an app entry to the repository's JSON with id, name, and one release.
+  4. Give the release a versionName, a versionCode, and the URL.
+  5. Republish the JSON.
+
+Users see your app on their next refresh. There is no propagation delay,
+because there is nothing in between you and them.
+
+
+What the repository needs from you
+----------------------------------
+
+For each app, at minimum:
+
+  id           The Android applicationId, e.g. com.example.myapp. This is how
+               the store recognises the app across versions and across
+               repositories. It must match the APK exactly.
+
+  name         The display name.
+
+For each release, at minimum:
+
+  versionName  A human version, e.g. 1.4.0.
+  versionCode  An integer. Android uses this to decide what is newer, and so
+               does OpenAppStore. It must increase with every release.
+  url          A direct link to the APK file.
+
+Everything else is optional and improves the listing:
+
+  summary        One line, shown in the browse list. Write it like a subject
+                 line, not a paragraph.
+  description    Longer text. Blank lines separate paragraphs.
+  developer      Your name or organisation.
+  license        An SPDX identifier: MIT, Apache-2.0, GPL-3.0-or-later, ...
+  categories     One or more from a small set (Tools, Productivity, Games,
+                 Education, Multimedia, Internet, Development, Security,
+                 Privacy, System, Graphics, Health, Finance, Communication,
+                 Utilities, Other). These drive the filter chips.
+  tags           Free-form keywords. Searched together with the name and
+                 developer.
+  icon           URL to a square image. 192x192 or larger, PNG or JPEG.
+  screenshots    A list of image URLs, shown as a horizontal strip. Landscape
+                 or portrait both work; keep them under about 1080 px wide.
+  homepage, sourceCode, issueTracker, donate
+                 URLs, shown as buttons on the app page.
+
+Per release, in addition:
+
+  size             Size in bytes. Show it; users appreciate knowing.
+  sha256           Hex SHA-256 of the APK. See "Checksums" below.
+  minSdkVersion    The lowest Android API level the APK supports.
+  targetSdkVersion The API level it was built against.
+  channel          stable (default), beta, or alpha.
+  added            Date, e.g. 2026-03-14.
+  changelog        What changed. Shown under the version.
+
+
+A complete example
+------------------
+
+{
+  "formatVersion": 1,
+  "name": "My Repo",
+  "apps": [
+    {
+      "id": "com.example.myapp",
+      "name": "My App",
+      "summary": "Does one thing well",
+      "description": "The longer story.\n\nA second paragraph.",
+      "developer": "Jane Doe",
+      "license": "MIT",
+      "categories": ["Tools", "Privacy"],
+      "tags": ["offline", "utility"],
+      "icon": "https://example.com/myapp/icon.png",
+      "screenshots": ["https://example.com/myapp/1.png"],
+      "sourceCode": "https://example.com/myapp/src",
+      "releases": [
+        {
+          "versionName": "1.0.0",
+          "versionCode": 1,
+          "channel": "stable",
+          "url": "https://example.com/myapp/myapp-1.0.0.apk",
+          "size": 5242880,
+          "sha256": "",
+          "minSdkVersion": 24,
+          "targetSdkVersion": 36,
+          "added": "2026-03-14",
+          "changelog": "First release."
+        }
+      ]
+    }
+  ]
+}
+
+A JSON array of apps also works if you do not need repository-level metadata,
+but the object form above is what the tooling produces and expects.
+
+
+Version codes are not version names
+-----------------------------------
+
+The single most common publishing mistake is reusing a version code.
+
+  - versionName is for humans and can be anything: 2.0, 2.0-beta1, 2026.03.
+  - versionCode is for machines and must strictly increase, forever, even for
+    beta releases. 1, 2, 3, 4, ... or 100, 200, 300 if you like round numbers.
+
+If two releases share a version code, the store picks one arbitrarily and your
+update indicators become meaningless. Give betas real, higher version codes if
+you want testers to actually receive them.
+
+
+Checksums
+---------
+
+Compute the SHA-256 of the APK and put it in the release:
+
+  Windows:  certutil -hashfile myapp-1.0.0.apk SHA256
+  Linux:    sha256sum myapp-1.0.0.apk
+  macOS:    shasum -a 256 myapp-1.0.0.apk
+
+OpenAppStore verifies the file against this value after downloading and before
+installing. It is optional - a blank string means "do not check" - but it turns
+a truncated or tampered download from "an install error you cannot explain"
+into a clear message. Use it.
+
+The desktop tool Repo Forge fills this in for you: point it at a local APK and
+it writes both the byte size and the SHA-256.
+
+
+Signing
+-------
+
+Use one signing key for the life of the app and never lose it. Android refuses
+to install an update signed with a different key, and there is no recourse:
+the user must uninstall to move to your new key. Back the keystore up
+somewhere you will still have it in five years.
+
+Debug builds, including the ones this project produces by default, are signed
+with an automatically generated debug key. That is fine for testing on your own
+device and useless for distributing: every machine has a different debug key.
+
+
+Publishing the index
+--------------------
+
+Host the JSON file anywhere it can be fetched: a static site, object storage, a
+web server, or a GitHub Pages branch. Two practical notes:
+
+  - The conventional filename is repo.json. OpenAppStore appends /repo.json
+    when a user types a bare host, so that is the path to make available.
+  - Serve it as application/json if you can, though the app does not insist.
+
+Keep the JSON and the APKs it references in sync. If you publish a release
+entry before the APK is actually downloadable, users get a 404 at the worst
+possible moment. Upload the APK first, then the index.
+
+
+Testing before you tell anyone
+------------------------------
+
+Serve the repository locally and add it to the app:
+
+  cd path\to\repo-root
+  python -m http.server 8000
+
+Then add http://your-lan-ip:8000/repo.json as a source. If the app can browse,
+download, and install from that, it will work from a real host too.
+
+
+Using Repo Forge
+----------------
+
+Repo Forge is the desktop GUI included with this project. It is optional - the
+index is just JSON and you can write it by hand - but it removes most of the
+ways to get it wrong.
+
+  python repo_forge.py
+
+  - Fill in the repository fields.
+  - Add an app, fill in its details, screenshots, and links.
+  - Under Releases, click Pick APK file to pull in the size and checksum from a
+    local file, then fill in the version.
+  - Click Validate to catch missing IDs, duplicate package names, releases with
+    no URL, or a version code of zero.
+  - Look at the JSON preview, then Save.
+
+It can also open an existing index from disk or fetch one from a URL, so you
+can edit a repository you did not start.
+
+
+Conventions that make repositories pleasant
+-------------------------------------------
+
+  - Always set an icon. A listing without one looks broken.
+  - Write the summary as a single sentence and the description as prose.
+  - Keep at least the last two or three releases listed. It costs nothing and
+    lets people roll back.
+  - Write changelogs. "Bug fixes" tells a reader more than an empty string.
+  - Set minSdkVersion honestly. It is how someone finds out your app cannot run
+    on their phone before they waste a download.

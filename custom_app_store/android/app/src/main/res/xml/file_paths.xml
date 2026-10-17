@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- APKs are downloaded into the app cache directory before installing. -->
+    <cache-path name="apk_cache" path="." />
+    <files-path name="apk_files" path="." />
+    <external-cache-path name="apk_external_cache" path="." />
+</paths>

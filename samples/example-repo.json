@@ -1,0 +1,96 @@
+{
+  "formatVersion": 1,
+  "name": "Example Repo",
+  "description": "A tiny demonstration repository showing every supported field. Replace the URLs with your own.",
+  "homepage": "https://example.com",
+  "mirrors": [],
+  "lastUpdated": "2026-10-13T00:00:00",
+  "apps": [
+    {
+      "id": "com.example.notes",
+      "name": "Simple Notes",
+      "summary": "A tiny offline notes app",
+      "description": "Simple Notes keeps your notes on the device.\n\n- Offline first\n- Dark theme\n- Export to Markdown",
+      "developer": "Example Dev",
+      "license": "MIT",
+      "categories": [
+        "Productivity",
+        "Tools"
+      ],
+      "tags": [
+        "notes",
+        "offline"
+      ],
+      "icon": "https://example.com/icons/notes.png",
+      "screenshots": [
+        "https://example.com/shots/notes-1.png",
+        "https://example.com/shots/notes-2.png"
+      ],
+      "homepage": "https://example.com/notes",
+      "sourceCode": "https://example.com/notes/src",
+      "issueTracker": "https://example.com/notes/issues",
+      "donate": "",
+      "releases": [
+        {
+          "versionName": "1.2.0",
+          "versionCode": 12,
+          "channel": "stable",
+          "url": "https://example.com/apk/notes-1.2.0.apk",
+          "size": 5242880,
+          "sha256": "",
+          "minSdkVersion": 23,
+          "targetSdkVersion": 34,
+          "added": "2026-09-01",
+          "changelog": "Added Markdown export."
+        },
+        {
+          "versionName": "1.1.0",
+          "versionCode": 11,
+          "channel": "stable",
+          "url": "https://example.com/apk/notes-1.1.0.apk",
+          "size": 5033164,
+          "sha256": "",
+          "minSdkVersion": 23,
+          "targetSdkVersion": 34,
+          "added": "2026-07-15",
+          "changelog": "Dark theme fixes."
+        }
+      ]
+    },
+    {
+      "id": "com.example.timer",
+      "name": "Focus Timer",
+      "summary": "Pomodoro timer with no ads",
+      "description": "A distraction-free Pomodoro timer.",
+      "developer": "Example Dev",
+      "license": "Apache-2.0",
+      "categories": [
+        "Productivity"
+      ],
+      "tags": [
+        "timer",
+        "pomodoro"
+      ],
+      "icon": "https://example.com/icons/timer.png",
+      "screenshots": [],
+      "homepage": "https://example.com/timer",
+      "sourceCode": "",
+      "issueTracker": "",
+      "donate": "https://example.com/donate",
+      "releases": [
+        {
+          "versionName": "0.9.0",
+          "versionCode": 3,
+          "channel": "beta",
+          "url": "https://example.com/apk/timer-0.9.0.apk",
+          "size": 3145728,
+          "sha256": "",
+          "minSdkVersion": 21,
+          "targetSdkVersion": 34,
+          "added": "2026-10-01",
+          "changelog": "First public beta."
+        }
+      ]
+    }
+  ]
+}

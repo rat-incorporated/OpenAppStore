@@ -1,0 +1,258 @@
+Running your own repository
+===========================
+
+A repository is not a service. It is a folder of files served over HTTP, plus a
+JSON index that lists them. If you can host a website, you can host a
+repository, and you can do it in an afternoon.
+
+This guide covers what to put on disk, how to serve it, how to keep it correct
+as you publish new versions, and what can go wrong.
+
+
+What you are actually hosting
+-----------------------------
+
+Two kinds of file:
+
+  An index. One JSON document, conventionally named repo.json, listing every
+  app and every downloadable release.
+
+  Artifacts. The APK files themselves, plus any icons and screenshots you
+  reference. These are ordinary static files with no special treatment.
+
+Nothing computes, nothing authenticates, nothing is per-user. Every request is
+a plain file fetch. That means any static host on earth will do, and it means
+you can debug it with a browser.
+
+
+A layout that works
+-------------------
+
+  repo-root/
+    repo.json
+      The index.
+    apk/
+      myapp-1.0.0.apk
+      myapp-1.1.0.apk
+    icons/
+      myapp.png
+    screenshots/
+      myapp-1.png
+      myapp-2.png
+
+Group by kind, not by app, if you expect many apps. If you host one or two
+apps, one folder per app is tidier. The only rule is that every url in the
+index resolves, relative to the host you give users.
+
+
+The index, and the one field that matters most
+----------------------------------------------
+
+The top level of repo.json:
+
+{
+  "formatVersion": 1,
+  "name": "My Repo",
+  "description": "Apps I build and trust.",
+  "homepage": "https://example.com",
+  "mirrors": [],
+  "lastUpdated": "2026-03-14T10:00:00",
+  "apps": [ ... ]
+}
+
+  formatVersion  Currently 1. Keep it, so tooling can tell the versions apart.
+  name           Important: when a user adds your repository, this name is
+                 what appears next to their apps unless they typed one of
+                 their own. Set it to something short and recognisable.
+  description, homepage, mirrors, lastUpdated
+                 Metadata. Current builds read name and apps; the rest is
+                 informational and reserved for future use. Fill them in
+                 anyway - the desktop tool writes them, and they document the
+                 repository for whoever finds the file.
+
+The apps array is the substance. Each app has an id, a name, and a releases
+array; each release has a versionName, a versionCode, and a url. The full field
+reference is in the publishing guide.
+
+
+Checking your work before anyone else sees it
+---------------------------------------------
+
+From the folder that contains repo.json:
+
+  python -m http.server 8000
+
+Then open http://localhost:8000/repo.json in a browser. You are looking for
+valid JSON, not an error page. If your browser shows the JSON as text and not a
+download, the host is configured correctly.
+
+Then add http://your-lan-ip:8000/repo.json as a source in the app on a phone on
+the same network, and walk through browse, download, and install. This catches
+almost everything, including the two mistakes that browser-only checks miss: a
+url that points at a page instead of a file, and an APK that will not install.
+
+
+Serving it properly
+-------------------
+
+Any of these work. Pick the one you already run.
+
+A plain web server (nginx)
+  Put the folder in a docroot and serve it statically. Make sure .json is
+  served with a JSON content type, and that .apk is downloadable and not
+  intercepted by a handler.
+
+Caddy
+  Drop the folder in and let it serve; HTTPS is automatic. Nothing else to
+  configure.
+
+GitHub Pages or similar
+  Commit repo.json and the APKs to a repository and publish the branch. Watch
+  the file size limits of the host - Pages dislikes very large files.
+
+Object storage (S3, R2, GCS, ...)
+  Upload the files and enable public reads, or front them with a CDN. This is
+  the cheapest way to serve large APKs, and the most boring, which is a
+  compliment.
+
+A local machine
+  python -m http.server is genuinely fine for a handful of users on your LAN.
+
+
+Caching
+-------
+
+The two halves have opposite needs.
+
+repo.json changes often and is tiny, so do not let anything cache it for long:
+
+  Cache-Control: no-cache
+
+APKs never change, so let them be cached forever. If a given URL always serves
+the same bytes - which is what versioned filenames give you - this is safe and
+saves you real bandwidth:
+
+  Cache-Control: public, max-age=31536000, immutable
+
+That combination is the whole performance story. Never overwrite an APK at an
+existing URL; publish a new filename instead, and let the old one cache.
+
+
+HTTP or HTTPS
+-------------
+
+Use HTTPS for anything reachable from the internet. Users are downloading and
+installing software; the connection should be protected, and the checksums in
+your index only mean something if nobody between the two of you can rewrite
+them.
+
+OpenAppStore also allows plain HTTP, deliberately, so a repository on your own
+network works without a certificate. If you are serving to machines you can
+see, HTTP is fine. If you are serving to the world, use HTTPS.
+
+
+Do you need CORS?
+-----------------
+
+No. OpenAppStore is a native Android app, not a web page, so the browser
+same-origin rules do not apply. Add CORS headers if a web front end also needs
+to read your index, but the app does not care either way.
+
+
+Publishing a new version, safely
+--------------------------------
+
+Order matters, because a window exists where the index and the files disagree.
+
+  1. Build and sign the APK.
+  2. Compute its size and SHA-256.
+  3. Upload the APK. Confirm it downloads and that its hash matches.
+  4. Only now, add the release to the index.
+  5. Publish the index.
+
+If you do it in this order, the worst case during the window is that users do
+not yet see the new version. If you reverse steps 3 and 4, the worst case is a
+download button that 404s.
+
+Write the index atomically. Write to a temporary file, then rename it over
+repo.json. A rename on the same filesystem is atomic, so no user ever fetches a
+half-written index. A truncated JSON file is not a partial failure for the
+reader; it is a total one.
+
+
+Rolling back
+------------
+
+Keep the previous index file. If a release turns out to be broken, restore the
+older index and the app it points at becomes current again. Because version
+codes only ever increase, an older index means an older version code, which
+clients will treat as "already up to date" and quietly do nothing - which is
+usually what you want during a rollback.
+
+If you must pull a release, remove it from the index rather than deleting the
+file. Deleting the file turns anyone's half-finished download into a mystery
+error; removing the entry simply makes it unavailable going forward.
+
+
+Capacity and bandwidth
+----------------------
+
+Numbers, so you can plan:
+
+  repo.json                     a few KB, whether you have two apps or two
+                                hundred
+  an icon or screenshot          tens to hundreds of KB each
+  an APK                        15-20 MB is typical for a Flutter app
+
+Bandwidth is the only real cost. A hundred installs of a 20 MB app is 2 GB. If
+that matters, put the artifacts behind a CDN or object storage and keep the
+index wherever is convenient - they do not need to live in the same place, as
+long as the urls in the index are absolute.
+
+
+When something breaks
+---------------------
+
+The app tells the user what went wrong, and the messages map to specific
+causes. The ones you will see most:
+
+  "Could not reach <host>"
+      DNS, a firewall, or the machine is down. Test the exact url from a phone
+      on the same network the user is on, not from your laptop.
+
+  "returned HTTP 404"
+      The path is wrong. Remember the app appends /repo.json when a user types
+      a bare host, so a repository at https://example.com/store/ must actually
+      serve /store/repo.json.
+
+  "is not valid JSON"
+      The file was fetched but cannot be parsed. Usually a half-written index,
+      or an HTML error page with a 200 status. Check the raw bytes.
+
+  An app is listed but will not install
+      The APK url served something that is not an APK - often an HTML
+      interstitial from a file host - or the APK is signed with a different key
+      than the copy already installed on the device.
+
+  Progress bar sits at "Downloading..." with no percentage
+      The server sent no Content-Length, so the app cannot compute a
+      percentage. The download still completes. Fix by serving a known-length
+      response rather than a chunked one.
+
+Keep one repository small and correct rather than one repository large and
+hopeful. If a repository gets unwieldy, split it: users can add as many as they
+like, and each one fails independently.
+
+
+A minimal checklist
+-------------------
+
+  [ ] repo.json is valid JSON and served as JSON
+  [ ] /repo.json is reachable from the host users will type
+  [ ] every url in the index returns the expected file
+  [ ] APK urls end in real APK bytes, not a landing page
+  [ ] SHA-256 in the index matches the uploaded APK
+  [ ] versionCode increases with every release, betas included
+  [ ] repo.json is served with a short or no cache lifetime
+  [ ] APK filenames are versioned and safe to cache forever
+  [ ] you have walked through a real install on a real device
